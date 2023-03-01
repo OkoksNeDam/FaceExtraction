@@ -148,10 +148,10 @@ def check_image_brightness(image):
     dark_pixel = np.sum(dark_part > 0)
     bright_pixel = np.sum(bright_part > 0)
     if dark_pixel / total_pixel > bright_thres:
-        save_message("./model_result/message.txt", "Слишком темное изображение. Сделайте снимок ещё раз.")
+        save_message("./model_output/message.txt", "Слишком темное изображение. Сделайте снимок ещё раз.")
         sys.exit()
     if bright_pixel / total_pixel > dark_thres:
-        save_message("./model_result/message.txt", "Слишком яркое изображение. Сделайте снимок ещё раз.")
+        save_message("./model_output/message.txt", "Слишком яркое изображение. Сделайте снимок ещё раз.")
         sys.exit()
 
 
