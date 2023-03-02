@@ -1,5 +1,7 @@
 from torchvision import transforms
 from facenet_pytorch import MTCNN as Facenet_MTCNN  # Image cropping directly.
+
+from src.FaceExtraction.model_outputs_enum import ModelOutputs
 from src.FaceExtraction.utils import *
 
 
@@ -12,9 +14,7 @@ class FaceExtractor:
         face_parts_classifier = init_face_parts_classifier(filepath=self.face_part_classifier_filepath)
 
         if image_to_crop.shape[0] < 750 or image_to_crop.shape[1] < 750:
-            save_message(self.model_result_folder + "message.txt",
-                         "Разрешение изображения должно быть не меньше, чем 750x750.")
-            sys.exit()
+            return ModelOutputs.INCORRECT_RESOLUTION
 
         check_image_brightness(image_to_crop)
 
@@ -23,29 +23,23 @@ class FaceExtractor:
 
         if check_people_absence_on_image(image_to_crop, detector) and check_people_absence_on_image(image_to_crop,
                                                                                                     yolov5_algorithm):
-            save_message(self.model_result_folder + "message.txt",
-                         "На фотографии нет людей. Сделайте снимок, где есть ваше лицо.")
-            sys.exit()
+            return ModelOutputs.PEOPLE_ABSENCE
 
         if get_number_of_people_on_image(image_to_crop, yolov5_algorithm) > 1:
-            save_message(self.model_result_folder + "message.txt",
-                         "На фотографии несколько людей. Сделайте снимок, на котором находитесь только вы.")
-            sys.exit()
+            return ModelOutputs.SEVERAL_PEOPLE
 
         # Cropping a face from an image.
         cropped_face = crop_face_from_image(image_to_crop,
                                             Facenet_MTCNN(image_size=360, select_largest=False, post_process=False))
 
         if cropped_face is None:
-            save_message(self.model_result_folder + "message.txt", "Лицо не видно полностью, сделайте снимок ещё раз.")
-            sys.exit()
+            return ModelOutputs.CLOSED_FACE
 
         # Get coordinates of face parts.
         face_parts_boxes = get_face_parts_boxes(cropped_face, detector)
 
         if not face_parts_boxes:
-            save_message(self.model_result_folder + "message.txt", "Лицо не видно полностью, сделайте снимок ещё раз.")
-            sys.exit()
+            return ModelOutputs.CLOSED_FACE
 
         # Changing coordinates of face parts to crop them.
         mouth_top = change_coordinate(face_parts_boxes[2], 0, 50, 0, 360)
@@ -89,8 +83,6 @@ class FaceExtractor:
                 mouth_prediction_label != 1 or nose_prediction_label != 2 or \
                 left_eye_prediction[0][0] < 1 or right_eye_prediction[0][0] < 1 or mouth_prediction[0][1] < 1 or \
                 nose_prediction[0][2] < 1:
-            save_message(self.model_result_folder + "message.txt", "Лицо не видно полностью, сделайте снимок ещё раз.")
-            sys.exit()
+            return ModelOutputs.CLOSED_FACE
 
-        save_image(torch.tensor(torch.tensor(result).permute(2, 0, 1).int().numpy()),
-                   self.model_result_folder + "result_image.jpg")
+        return torch.tensor(torch.tensor(result).permute(2, 0, 1).int().numpy())

@@ -1,4 +1,5 @@
 from src.FaceExtraction.face_extractor import FaceExtractor
+from src.FaceExtraction.model_outputs_enum import ModelOutputs
 from src.FaceExtraction.utils import *
 
 
@@ -19,4 +20,9 @@ if __name__ == '__main__':
 
     face_extractor = FaceExtractor(model_result_folder="./model_output/",
                                    face_part_classifier_filepath="downloaded_models/face_part_classifier.pickle")
-    face_extractor.extract_face_from(image_to_crop)
+    model_output = face_extractor.extract_face_from(image_to_crop)
+
+    if isinstance(model_output, ModelOutputs):
+        save_message("./model_output/message.txt", model_output.value)
+    else:
+        save_image(model_output, "./model_output/result_image.jpg")
