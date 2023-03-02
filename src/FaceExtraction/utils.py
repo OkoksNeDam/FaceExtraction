@@ -12,6 +12,8 @@ import os
 import tkinter as tk
 from tkinter import filedialog
 
+from src.FaceExtraction.ModelBaseline import ModelBaseline
+
 
 def save_image(img, path):
     im = Image.fromarray(img.permute(1, 2, 0).int().numpy().astype('uint8'), 'RGB')
@@ -162,7 +164,13 @@ def init_face_parts_classifier(filepath):
     """
 
     if get_file_extension(filepath) == ".pickle":
-        return pickle.load(open(filepath, 'rb'))
+        # model = pickle.load(open(filepath, 'rb'))
+        # torch.save(model.state_dict(), "../../downloaded_models/new_model.pt")
+        # return pickle.load(open(filepath, 'rb'))
+        model = ModelBaseline()
+        model.load_state_dict(torch.load("../../downloaded_models/new_model.pt"))
+        model.eval()
+        return model
 
 
 def get_file_extension(filepath):
