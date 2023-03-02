@@ -6,30 +6,35 @@ from src.FaceExtraction.utils import *
 
 
 class FaceExtractor:
-    def __init__(self, model_result_folder, face_part_classifier_filepath):
-        self.model_result_folder = model_result_folder
+    def __init__(self, face_part_classifier_filepath):
         self.face_part_classifier_filepath = face_part_classifier_filepath
 
-    def extract_face_from(self, image_to_crop):
+    def extract_face_from(self, filepath):
+
+        # Checking if a file has a .jpg extension.
+        if get_file_extension(filepath) not in [".jpg", ".jpeg"]:
+            return ModelOutputs.INCORRECT_EXTENSION
+
+        image = cv2.imread(filepath)
+
         face_parts_classifier = init_face_parts_classifier(filepath=self.face_part_classifier_filepath)
 
-        if image_to_crop.shape[0] < 750 or image_to_crop.shape[1] < 750:
+        if image.shape[0] < 750 or image.shape[1] < 750:
             return ModelOutputs.INCORRECT_RESOLUTION
 
-        check_image_brightness(image_to_crop)
+        check_image_brightness(image)
 
         yolov5_algorithm = init_yolov5()
         detector = init_face_detector("mtcnn")
 
-        if check_people_absence_on_image(image_to_crop, detector) and check_people_absence_on_image(image_to_crop,
-                                                                                                    yolov5_algorithm):
+        if check_people_absence_on_image(image, detector) and check_people_absence_on_image(image, yolov5_algorithm):
             return ModelOutputs.PEOPLE_ABSENCE
 
-        if get_number_of_people_on_image(image_to_crop, yolov5_algorithm) > 1:
+        if get_number_of_people_on_image(image, yolov5_algorithm) > 1:
             return ModelOutputs.SEVERAL_PEOPLE
 
         # Cropping a face from an image.
-        cropped_face = crop_face_from_image(image_to_crop,
+        cropped_face = crop_face_from_image(image,
                                             Facenet_MTCNN(image_size=360, select_largest=False, post_process=False))
 
         if cropped_face is None:
