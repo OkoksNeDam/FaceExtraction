@@ -3,16 +3,13 @@ import pytest
 from src.FaceExtraction.face_extractor import FaceExtractor
 from src.FaceExtraction.model_outputs_enum import ModelOutputs
 
-import src.FaceExtraction.ModelBaseline
-from src.FaceExtraction.utils import *
-
-
+# Running all tests.
 # python -m pytest src/tests/test_face_extractor.py
 
 
 @pytest.fixture
 def face_extractor():
-    return FaceExtractor(face_part_classifier_filepath="downloaded_models/new_model.pt")
+    return FaceExtractor(face_part_classifier_filepath="downloaded_models/face_part_classifier.pt")
 
 
 def test_incorrect_extension(face_extractor):

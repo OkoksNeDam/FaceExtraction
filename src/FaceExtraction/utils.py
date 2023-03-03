@@ -1,5 +1,4 @@
 import glob
-import pickle
 import sys
 
 from PIL import Image
@@ -163,12 +162,9 @@ def init_face_parts_classifier(filepath):
     :return:initialized classifier.
     """
 
-    if get_file_extension(filepath) == ".pickle":
-        # model = pickle.load(open(filepath, 'rb'))
-        # torch.save(model.state_dict(), "../../downloaded_models/new_model.pt")
-        # return pickle.load(open(filepath, 'rb'))
+    if get_file_extension(filepath) == ".pt":
         model = ModelBaseline()
-        model.load_state_dict(torch.load("../../downloaded_models/new_model.pt"))
+        model.load_state_dict(torch.load(filepath))
         model.eval()
         return model
 
