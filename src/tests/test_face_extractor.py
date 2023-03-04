@@ -16,7 +16,8 @@ def face_extractor():
 
     :return:instance of FaceExtractor class.
     """
-    return FaceExtractor(face_part_classifier_filepath="downloaded_models/face_part_classifier.pt")
+    return FaceExtractor(face_part_classifier_filepath="downloaded_models/face_part_classifier.pt",
+                         image_bounds=(700, 700))
 
 
 # Data for the function test_extract_face, that is under test.
@@ -33,7 +34,7 @@ tests_for_extract_face = \
 
 
 @pytest.mark.parametrize("image_path,expected_model_output", tests_for_extract_face)
-def test_extract_face(face_extractor, image_path, expected_model_output):
+def test_extract_face_from(face_extractor, image_path, expected_model_output):
     """
     Testing the extract_face_from function from the FaceExtractor class.
 

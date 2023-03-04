@@ -5,10 +5,18 @@ from src.FaceExtraction.utils import *
 
 
 class FaceExtractor:
-    def __init__(self, face_part_classifier_filepath):
-        self.face_part_classifier_filepath = face_part_classifier_filepath
+    def __init__(self, face_part_classifier_filepath, image_bounds:tuple):
+        self.image_bounds = image_bounds
+        # Loading face part classifier.
+        self.face_parts_classifier = load_face_parts_classifier(filepath=face_part_classifier_filepath)
 
     def extract_face_from(self, filepath):
+        """
+        A function that crops a person's face from an image.
+
+        :param filepath:path to image.
+        :return:tensor that stores the cut out image of the face.
+        """
 
         # Checking if a file has a .jpg extension.
         if get_file_extension(filepath) not in [".jpg", ".jpeg"]:
@@ -16,9 +24,8 @@ class FaceExtractor:
 
         image = cv2.imread(filepath)
 
-        face_parts_classifier = init_face_parts_classifier(filepath=self.face_part_classifier_filepath)
-
-        if image.shape[0] < 700 or image.shape[1] < 700:
+        # Check image bounds.
+        if self._check_image_bounds(image):
             return ModelOutputs.INCORRECT_RESOLUTION
 
         image_brightness = check_image_brightness(image)
@@ -66,23 +73,23 @@ class FaceExtractor:
 
         left_eye_img = Image.fromarray(left_eye_img.int().numpy().astype('uint8'), 'RGB')
         left_eye_img = transforms.ToTensor()(left_eye_img)
-        left_eye_prediction = face_parts_classifier(left_eye_img.unsqueeze(0).float())
+        left_eye_prediction = self.face_parts_classifier(left_eye_img.unsqueeze(0).float())
         left_eye_prediction_label = torch.argmax(left_eye_prediction)
 
         right_eye_img = Image.fromarray(right_eye_img.int().numpy().astype('uint8'), 'RGB')
         right_eye_img = transforms.ToTensor()(right_eye_img)
-        right_eye_prediction = face_parts_classifier(right_eye_img.unsqueeze(0).float())
+        right_eye_prediction = self.face_parts_classifier(right_eye_img.unsqueeze(0).float())
         right_eye_prediction_label = torch.argmax(right_eye_prediction)
 
         mouth_img = Image.fromarray(mouth_img.int().numpy().astype('uint8'), 'RGB')
         mouth_img = mouth_img.resize((100, 100), Image.LANCZOS)
         mouth_img = transforms.ToTensor()(mouth_img)
-        mouth_prediction = face_parts_classifier(mouth_img.unsqueeze(0).float())
+        mouth_prediction = self.face_parts_classifier(mouth_img.unsqueeze(0).float())
         mouth_prediction_label = torch.argmax(mouth_prediction)
 
         nose_img = Image.fromarray(nose_img.int().numpy().astype('uint8'), 'RGB')
         nose_img = transforms.ToTensor()(nose_img)
-        nose_prediction = face_parts_classifier(nose_img.unsqueeze(0).float())
+        nose_prediction = self.face_parts_classifier(nose_img.unsqueeze(0).float())
         nose_prediction_label = torch.argmax(nose_prediction)
 
         if right_eye_prediction_label != 0 or left_eye_prediction_label != 0 or \
@@ -92,3 +99,6 @@ class FaceExtractor:
             return ModelOutputs.CLOSED_FACE
 
         return torch.tensor(torch.tensor(result).permute(2, 0, 1).int().numpy())
+
+    def _check_image_bounds(self, image):
+        return image.shape[0] < self.image_bounds[0] or image.shape[1] < self.image_bounds[1]

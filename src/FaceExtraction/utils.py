@@ -151,7 +151,7 @@ def check_image_brightness(image):
     return True
 
 
-def init_face_parts_classifier(filepath):
+def load_face_parts_classifier(filepath):
     """
     Initialize the classifier which will classify different parts of the face (eyes, nose, mouth).
 
