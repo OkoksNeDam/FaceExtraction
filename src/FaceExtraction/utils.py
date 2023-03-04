@@ -1,5 +1,4 @@
 import glob
-import sys
 
 from PIL import Image
 import torch
@@ -12,6 +11,7 @@ import tkinter as tk
 from tkinter import filedialog
 
 from src.FaceExtraction.ModelBaseline import ModelBaseline
+from src.FaceExtraction.model_outputs_enum import ModelOutputs
 
 
 def save_image(img, path):
@@ -140,18 +140,15 @@ def check_image_brightness(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     dark_part = cv2.inRange(gray, 0, 30)
     bright_part = cv2.inRange(gray, 220, 255)
-    # use histogram
-    # dark_pixel = np.sum(hist[:30])
-    # bright_pixel = np.sum(hist[220:256])
     total_pixel = np.size(gray)
     dark_pixel = np.sum(dark_part > 0)
     bright_pixel = np.sum(bright_part > 0)
+
     if dark_pixel / total_pixel > bright_thres:
-        save_message("./model_output/message.txt", "Слишком темное изображение. Сделайте снимок ещё раз.")
-        sys.exit()
+        return ModelOutputs.DARK_LIGHTING
     if bright_pixel / total_pixel > dark_thres:
-        save_message("./model_output/message.txt", "Слишком яркое изображение. Сделайте снимок ещё раз.")
-        sys.exit()
+        return ModelOutputs.BRIGHT_LIGHTING
+    return True
 
 
 def init_face_parts_classifier(filepath):

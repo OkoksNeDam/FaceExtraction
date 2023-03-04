@@ -1,5 +1,4 @@
 from src.FaceExtraction.face_extractor import FaceExtractor
-from src.FaceExtraction.model_outputs_enum import ModelOutputs
 from src.FaceExtraction.utils import *
 
 

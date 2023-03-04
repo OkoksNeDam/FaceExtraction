@@ -1,7 +1,6 @@
 from torchvision import transforms
 from facenet_pytorch import MTCNN as Facenet_MTCNN  # Image cropping directly.
 
-from src.FaceExtraction.model_outputs_enum import ModelOutputs
 from src.FaceExtraction.utils import *
 
 
@@ -19,10 +18,12 @@ class FaceExtractor:
 
         face_parts_classifier = init_face_parts_classifier(filepath=self.face_part_classifier_filepath)
 
-        if image.shape[0] < 750 or image.shape[1] < 750:
+        if image.shape[0] < 700 or image.shape[1] < 700:
             return ModelOutputs.INCORRECT_RESOLUTION
 
-        check_image_brightness(image)
+        image_brightness = check_image_brightness(image)
+        if isinstance(image_brightness, ModelOutputs):
+            return image_brightness
 
         yolov5_algorithm = init_yolov5()
         detector = init_face_detector("mtcnn")
