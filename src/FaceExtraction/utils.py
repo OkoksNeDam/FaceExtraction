@@ -9,57 +9,10 @@ import numpy as np
 import os
 import tkinter as tk
 from tkinter import filedialog
+from torchvision import transforms
 
 from src.FaceExtraction.ModelBaseline import ModelBaseline
 from src.FaceExtraction.model_outputs_enum import ModelOutputs
-
-
-def save_image(img, path):
-    im = Image.fromarray(img.permute(1, 2, 0).int().numpy().astype('uint8'), 'RGB')
-    im.save(path)
-
-
-def check_people_absence_on_image(image_to_check, algorithm):
-    """
-    Checking for the absence of people in the photo.
-
-    :param image_to_check: image to check.
-    :param algorithm: algorithm to apply.
-    :return: return True if there are people in the photo, return False otherwise.
-    """
-
-    if type(algorithm).__name__ == "MTCNN":
-        face_detections = algorithm.detect_faces(image_to_check)
-        if not face_detections:
-            return True  # No people were found in the photo.
-        else:
-            return False  # There are people in the photo.
-
-    if str(type(algorithm)) == "<class 'yolov5.models.common.AutoShape'>":
-        # Предсказание модели.
-        predictions = algorithm(image_to_check).pred[0]
-        # Классы, найденные на изображении.
-        categories = predictions[:, 5]
-        if 0 not in categories:
-            return True  # No people were found in the photo.
-        else:
-            return False  # There are people in the photo.
-
-
-def get_number_of_people_on_image(image_to_check, algorithm):
-    """
-    Get number of people in the photo.
-
-    :param image_to_check: image to check.
-    :param algorithm: algorithm to apply.
-    :return: return number of people on image.
-    """
-    if str(type(algorithm)) == "<class 'yolov5.models.common.AutoShape'>":
-        # Предсказание модели.
-        predictions = algorithm(image_to_check).pred[0]
-        # Классы, найденные на изображении.
-        categories = predictions[:, 5]
-        return torch.sum(categories == 0)
 
 
 def init_face_detector(name):
@@ -80,6 +33,83 @@ def init_yolov5():
     :return: instance of yolov5.
     """
     return yolov5.load('../../downloaded_models/yolov5s.pt')
+
+
+def get_file_extension(filepath):
+    """
+    Get the extension of the provided file.
+
+    :param filepath:path of the provided file.
+    :return:extension of the provided file.
+    """
+    return os.path.splitext(p=filepath)[1]
+
+
+def check_image_brightness(image):
+    """
+    Check if the image is too bright or dark.
+    Looks at the ratio of bright pixels to dark ones.
+
+    :param image:image to check,
+    :return:ModelOutputs instance if image is too dark of bright, otherwise return True.
+    """
+
+    bright_thres = 0.5
+    dark_thres = 0.4
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    dark_part = cv2.inRange(gray, 0, 30)
+    bright_part = cv2.inRange(gray, 220, 255)
+    total_pixel = np.size(gray)
+    dark_pixel = np.sum(dark_part > 0)
+    bright_pixel = np.sum(bright_part > 0)
+
+    if dark_pixel / total_pixel > bright_thres:
+        return ModelOutputs.DARK_LIGHTING
+    if bright_pixel / total_pixel > dark_thres:
+        return ModelOutputs.BRIGHT_LIGHTING
+    return True
+
+
+def check_people_absence_on_image(image_to_check, algorithm):
+    """
+    Checking for the absence of people in the photo.
+
+    :param image_to_check: image to check.
+    :param algorithm: algorithm to apply.
+    :return: return True if there are people in the photo, return False otherwise.
+    """
+
+    # If algorithm is MTCNN.
+    if type(algorithm).__name__ == "MTCNN":
+        face_detections = algorithm.detect_faces(image_to_check)
+        # Return True if no people were found in the photo, return false otherwise.
+        return len(face_detections) == 0
+
+    # if algorithm is yolov5.
+    if str(type(algorithm)) == "<class 'yolov5.models.common.AutoShape'>":
+        # Model prediction.
+        predictions = algorithm(image_to_check).pred[0]
+        # Classes that were found on image (0 depends to human).
+        categories = predictions[:, 5]
+
+        # Return True if no people were found in the photo, return False otherwise.
+        return categories.tolist().count(0) == 0
+
+
+def get_number_of_people_on_image(image_to_check, algorithm):
+    """
+    Get number of people in the photo.
+
+    :param image_to_check: image to check.
+    :param algorithm: algorithm to apply.
+    :return: return number of people on image.
+    """
+    if str(type(algorithm)) == "<class 'yolov5.models.common.AutoShape'>":
+        # Предсказание модели.
+        predictions = algorithm(image_to_check).pred[0]
+        # Классы, найденные на изображении.
+        categories = predictions[:, 5]
+        return torch.sum(categories == 0)
 
 
 def crop_face_from_image(image_to_crop, algorithm):
@@ -119,6 +149,11 @@ def get_face_parts_boxes(face, algorithm):
         return [l_eye, r_eye, mouth_t, mouth_b, nose]
 
 
+def save_image(img, path):
+    im = Image.fromarray(img.permute(1, 2, 0).int().numpy().astype('uint8'), 'RGB')
+    im.save(path)
+
+
 def change_coordinate(coord, x, y, left_bound, right_bound):
     coord = list(coord)
     coord[0] += x
@@ -134,23 +169,6 @@ def change_coordinate(coord, x, y, left_bound, right_bound):
     return tuple(coord)
 
 
-def check_image_brightness(image):
-    bright_thres = 0.5
-    dark_thres = 0.4
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    dark_part = cv2.inRange(gray, 0, 30)
-    bright_part = cv2.inRange(gray, 220, 255)
-    total_pixel = np.size(gray)
-    dark_pixel = np.sum(dark_part > 0)
-    bright_pixel = np.sum(bright_part > 0)
-
-    if dark_pixel / total_pixel > bright_thres:
-        return ModelOutputs.DARK_LIGHTING
-    if bright_pixel / total_pixel > dark_thres:
-        return ModelOutputs.BRIGHT_LIGHTING
-    return True
-
-
 def load_face_parts_classifier(filepath):
     """
     Initialize the classifier which will classify different parts of the face (eyes, nose, mouth).
@@ -164,16 +182,6 @@ def load_face_parts_classifier(filepath):
         model.load_state_dict(torch.load(filepath))
         model.eval()
         return model
-
-
-def get_file_extension(filepath):
-    """
-    Get the extension of the provided file.
-
-    :param filepath:path of the provided file.
-    :return:extension of the provided file.
-    """
-    return os.path.splitext(p=filepath)[1]
 
 
 def save_message(filepath, message):
@@ -210,3 +218,19 @@ def chose_file():
     root.withdraw()
 
     return filedialog.askopenfilename()
+
+
+def get_face_part_prediction(face_part_img, algorithm):
+    """
+    Get prediction for granted face part.
+
+    :param face_part_img:get prediction of this img.
+    :param algorithm:algorithm that is used to get prediction.
+    :return: tuple(float prediction of face part, prediction label of face part)/
+    """
+    face_part_img = Image.fromarray(face_part_img.int().numpy().astype('uint8'), 'RGB')
+    face_part_img = face_part_img.resize((100, 100), Image.LANCZOS)
+    face_part_img = transforms.ToTensor()(face_part_img)
+    face_part_prediction = algorithm(face_part_img.unsqueeze(0).float())
+    face_part_prediction_label = torch.argmax(face_part_prediction)
+    return face_part_prediction, face_part_prediction_label

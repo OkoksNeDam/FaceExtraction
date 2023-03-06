@@ -16,8 +16,7 @@ def face_extractor():
 
     :return:instance of FaceExtractor class.
     """
-    return FaceExtractor(face_part_classifier_filepath="downloaded_models/face_part_classifier.pt",
-                         image_bounds=(700, 700))
+    return FaceExtractor(face_part_classifier_filepath="downloaded_models/face_part_classifier.pt")
 
 
 # Data for the function test_extract_face, that is under test.
