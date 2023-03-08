@@ -65,6 +65,8 @@ class FaceExtractor:
             return ModelOutputs.CLOSED_FACE
 
         # Changing coordinates of face parts to crop them.
+        # Due to the fact that the result of the model is a point, you have to
+        # manually select the boundaries for parts of the face.
         mouth_top = change_coordinate(face_parts_boxes[2], 0, 50, 0, 360)
         mouth_bottom = change_coordinate(face_parts_boxes[3], 0, -50, 0, 360)
         left_eye_top = change_coordinate(face_parts_boxes[0], -50, -50, 0, 360)
@@ -76,16 +78,19 @@ class FaceExtractor:
 
         result = torch.tensor(torch.tensor(cropped_face).permute(1, 2, 0).int().numpy())
 
+        # Crop face parts from image.
         left_eye_img = result[left_eye_top[1]:left_eye_bottom[1], left_eye_top[0]:left_eye_bottom[0]]
         right_eye_img = result[right_eye_top[1]:right_eye_bottom[1], right_eye_top[0]:right_eye_bottom[0]]
         mouth_img = result[mouth_bottom[1]:mouth_top[1], mouth_top[0]:mouth_bottom[0]]
         nose_img = result[nose_top[1]:nose_bottom[1], nose_top[0]:nose_bottom[0]]
 
+        # Get float and label predictions for face parts.
         left_eye_pred, left_eye_prediction_label = get_face_part_prediction(left_eye_img, self.face_parts_classifier)
         right_eye_pred, right_eye_prediction_label = get_face_part_prediction(right_eye_img, self.face_parts_classifier)
         mouth_pred, mouth_prediction_label = get_face_part_prediction(mouth_img, self.face_parts_classifier)
         nose_pred, nose_prediction_label = get_face_part_prediction(nose_img, self.face_parts_classifier)
 
+        # Check if prediction correspond to thresholds.
         if right_eye_prediction_label != 0 or left_eye_prediction_label != 0 or \
                 mouth_prediction_label != 1 or nose_prediction_label != 2 or \
                 left_eye_pred[0][0] < 1 or right_eye_pred[0][0] < 1 or mouth_pred[0][1] < 1 or \

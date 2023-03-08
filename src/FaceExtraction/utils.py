@@ -155,17 +155,27 @@ def save_image(img, path):
 
 
 def change_coordinate(coord, x, y, left_bound, right_bound):
+    """
+    Change coordinate "coord" adding to it x and y. Check if left and right bounds fit.
+
+    :param coord:coordinate to change.
+    :param x:add to coord[0].
+    :param y:add to coord[1].
+    :param left_bound:check if coord[0] < left_bound and coord[1] < left_bound.
+    :param right_bound:check if coord[0] > right_bound and coord[1] > right_bound.
+    :return:changed coordinate.
+    """
     coord = list(coord)
     coord[0] += x
     if coord[0] < left_bound:
-        coord[0] = 1
+        coord[0] = left_bound + 1
     if coord[0] > right_bound:
-        coord[0] = 359
+        coord[0] = right_bound - 1
     coord[1] += y
     if coord[1] < left_bound:
-        coord[1] = 1
+        coord[1] = left_bound + 1
     if coord[1] > right_bound:
-        coord[1] = 359
+        coord[1] = right_bound - 1
     return tuple(coord)
 
 
