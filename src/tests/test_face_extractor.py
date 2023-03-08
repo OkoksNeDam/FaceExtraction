@@ -5,10 +5,6 @@ from src.FaceExtraction.face_extractor import FaceExtractor
 from src.FaceExtraction.model_outputs_enum import ModelOutputs
 
 
-# Running all tests.
-# python -m pytest src/tests/test_face_extractor.py
-
-
 @pytest.fixture
 def face_extractor():
     """
